@@ -1016,7 +1016,7 @@ show_usage() {
     echo -e "x-ui enable       - Habilita x-ui al iniciar el sistema"
     echo -e "x-ui disable      - Deshabilita x-ui al iniciar el sistema"
     echo -e "x-ui log          - Verificar los registros de x-ui"
-    echo -e "x-ui banlog       - Verificar los registros de baneos en Fail2ban"
+    echo -e "x-ui banlog       - Verificar los registros ban en Fail2ban"
     echo -e "x-ui update       - Actualizar x-ui "
     echo -e "x-ui install      - Instalar x-ui "
     echo -e "x-ui uninstall    - Desinstalar x-ui "
