@@ -91,7 +91,7 @@ confirm_restart() {
 }
 
 before_show_menu() {
-    echo && echo -n -e "${yellow}Presione enter para volver al menú principal: ${plain}" && read temp
+    echo && echo -n -e "${yellow}Presione enter para volver al menú principal... ${plain}" && read temp
     show_menu
 }
 
