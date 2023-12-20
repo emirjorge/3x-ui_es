@@ -26,7 +26,8 @@ echo "La versión del sistema operativo es: $release"
 arch3xui() {
     case "$(uname -m)" in
     x86_64 | x64 | amd64) echo 'amd64' ;;
-    armv8 | arm64 | aarch64) echo 'arm64' ;;
+    armv8* | armv8 | arm64 | aarch64) echo 'arm64' ;;
+    armv7* | armv7 | arm | arm32 ) echo 'arm32' ;;
     *) echo -e "${green}¡Arquitectura de CPU no compatible! ${plain}" && rm -f install.sh && exit 1 ;;
     esac
 }
@@ -54,7 +55,11 @@ elif [[ "${release}" == "debian" ]]; then
         echo -e "${red} Por favor utilice Debian 10 o superior ${plain}\n" && exit 1
     fi
 elif [[ "${release}" == "arch" ]]; then
-    echo "OS is ArchLinux"
+    echo "Tu sistema operativo es ArchLinux"
+    elif [[ "${release}" == "manjaro" ]]; then
+    echo "Tu sistema operativo es Manjaro"
+elif [[ "${release}" == "armbian" ]]; then
+    echo "Tu sistema operativo es Armbian"
 
 else
     echo -e "${red}No se pudo verificar la versión del sistema operativo, ¡comuníquese con el autor!${plain}" && exit 1
@@ -63,13 +68,13 @@ fi
 install_base() {
     case "${release}" in
         centos|fedora)
-            yum install -y -q wget curl tar
+            yum -y update && yum install -y -q wget curl tar
             ;;
-        arch)
-            pacman -Syu --noconfirm wget curl tar
+        arch|manjaro)
+            pacman -Syu && pacman -Syu --noconfirm wget curl tar
             ;;
         *)
-            apt install -y -q wget curl tar
+            apt-get update && apt install -y -q wget curl tar
             ;;
     esac
 }
