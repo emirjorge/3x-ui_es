@@ -56,6 +56,10 @@ elif [[ "${release}" == "debian" ]]; then
     fi
 elif [[ "${release}" == "arch" ]]; then
     echo "El sistema operativo es ArchLinux"
+    elif [[ "${release}" == "manjaro" ]]; then
+    echo "El sistema operativo es Manjaro"
+elif [[ "${release}" == "armbian" ]]; then
+    echo "El sistema operativo es Armbian"
 fi
 
 
@@ -524,6 +528,8 @@ update_geo() {
     wget -N https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat
     wget -O geoip_IR.dat -N https://github.com/chocolate4u/Iran-v2ray-rules/releases/latest/download/geoip.dat
     wget -O geosite_IR.dat -N https://github.com/chocolate4u/Iran-v2ray-rules/releases/latest/download/geosite.dat
+    wget -O geoip_VN.dat https://github.com/vuong2023/vn-v2ray-rules/releases/latest/download/geoip.dat
+    wget -O geosite_VN.dat https://github.com/vuong2023/vn-v2ray-rules/releases/latest/download/geosite.dat
     systemctl start x-ui
     echo -e "${green}Geosite.dat + Geoip.dat + geoip_IR.dat + geosite_IR.dat have been updated successfully in bin folder '${binfolder}'!${plain}"
     before_show_menu
@@ -579,7 +585,7 @@ ssl_cert_issue() {
     fi
     # install socat second
     case "${release}" in
-        ubuntu|debian)
+        ubuntu|debian|armbian)
             apt update && apt install socat -y ;;
         centos)
             yum -y update && yum -y install socat ;;
