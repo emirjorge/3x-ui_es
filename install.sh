@@ -27,7 +27,8 @@ arch3xui() {
     case "$(uname -m)" in
     x86_64 | x64 | amd64) echo 'amd64' ;;
     armv8* | armv8 | arm64 | aarch64) echo 'arm64' ;;
-    armv7* | armv7 | arm | arm32 ) echo 'arm32' ;;
+    armv7* | armv7 | arm) echo 'armv7' ;;
+    armv6* | armv6 | arm) echo 'armv6' ;;
     *) echo -e "${green}¡Arquitectura de CPU no compatible! ${plain}" && rm -f install.sh && exit 1 ;;
     esac
 }
@@ -51,8 +52,18 @@ elif [[ "${release}" == "fedora" ]]; then
     fi
 
 elif [[ "${release}" == "debian" ]]; then
-    if [[ ${os_version} -lt 10 ]]; then
-        echo -e "${red} Por favor utilice Debian 10 o superior ${plain}\n" && exit 1
+    if [[ ${os_version} -lt 11 ]]; then
+        echo -e "${red} Por favor utilice Debian 11 o superior ${plain}\n" && exit 1
+    fi
+
+elif [[ "${release}" == "almalinux" ]]; then
+    if [[ ${os_version} -lt 9 ]]; then
+        echo -e "${red} Por favor utilice AlmaLinux 9 o superior ${plain}\n" && exit 1
+    fi
+
+elif [[ "${release}" == "rocky" ]]; then
+    if [[ ${os_version} -lt 9 ]]; then
+        echo -e "${red} Por favor utilice RockyLinux 9 o superior ${plain}\n" && exit 1
     fi
 elif [[ "${release}" == "arch" ]]; then
     echo "Tu sistema operativo es ArchLinux"
@@ -149,18 +160,21 @@ install_x-ui() {
     tar zxvf x-ui-linux-$(arch3xui).tar.gz
     rm x-ui-linux-$(arch3xui).tar.gz -f
     cd x-ui
+    chmod +x x-ui
+
+    # Verifica la arquitectura del sistema y renombra el archivo en consecuencia
+    if [[ $(arch3xui) == "armv6" || $(arch3xui) == "armv7" ]]; then
+    mv bin/xray-linux-$(arch3xui) bin/xray-linux-arm
+    chmod +x bin/xray-linux-arm
+    fi
+    
     chmod +x x-ui bin/xray-linux-$(arch3xui)
     cp -f x-ui.service /etc/systemd/system/
     wget --no-check-certificate -O /usr/bin/x-ui https://raw.githubusercontent.com/emirjorge/3x-ui_es/main/x-ui.sh
     chmod +x /usr/local/x-ui/x-ui.sh
     chmod +x /usr/bin/x-ui
     config_after_install
-    #echo -e "If it is a new installation, the default web port is ${green}2053${plain}, The username and password are ${green}admin${plain} by default"
-    #echo -e "Please make sure that this port is not occupied by other procedures,${yellow} And make sure that port 2053 has been released${plain}"
-    #    echo -e "If you want to modify the 2053 to other ports and enter the x-ui command to modify it, you must also ensure that the port you modify is also released"
-    #echo -e ""
-    #echo -e "If it is updated panel, access the panel in your previous way"
-    #echo -e ""
+
     systemctl daemon-reload
     systemctl enable x-ui
     systemctl start x-ui
