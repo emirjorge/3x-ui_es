@@ -51,8 +51,16 @@ elif [[ "${release}" == "fedora" ]]; then
         echo -e "${red} Por favor utilice Fedora 36 o una versión superior! ${plain}\n" && exit 1
     fi
 elif [[ "${release}" == "debian" ]]; then
-    if [[ ${os_version} -lt 10 ]]; then
-        echo -e "${red} Por favor utilice Debian 10 o una versión superior ${plain}\n" && exit 1
+    if [[ ${os_version} -lt 11 ]]; then
+        echo -e "${red} Por favor utilice Debian 11 o una versión superior ${plain}\n" && exit 1
+    fi
+elif [[ "${release}" == "almalinux" ]]; then
+    if [[ ${os_version} -lt 9 ]]; then
+        echo -e "${red} Por favor utilice Almalinux 9 o una versión superior ${plain}\n" && exit 1
+    fi
+elif [[ "${release}" == "rocky" ]]; then
+    if [[ ${os_version} -lt 9 ]]; then
+        echo -e "${red} Por favor utilice Rockylinux 9 o una versión superior ${plain}\n" && exit 1
     fi
 elif [[ "${release}" == "arch" ]]; then
     echo "El sistema operativo es ArchLinux"
@@ -124,6 +132,24 @@ update() {
         LOGI "La actualización está completa, el Panel se ha reiniciado automáticamente"
         exit 0
     fi
+}
+
+custom_version() {
+    echo "Ingrese la versión del Panel (Ejemplo 2.0.0):"
+    read panel_version
+
+    if [ -z "$panel_version" ]; then
+        echo "La versión del Panel no puede estar vacía. Cancelando..."
+    exit 1
+    fi
+
+    download_link="https://raw.githubusercontent.com/emirjorge/3x-ui_es/main/install.sh"
+
+    # Use the entered panel version in the download link
+    install_command="bash <(curl -Ls $download_link) v$panel_version"
+
+    echo "Descargando e instalando Panel versión $panel_version..."
+    eval $install_command
 }
 
 uninstall() {
@@ -325,7 +351,7 @@ enable_bbr() {
         ubuntu|debian)
             apt-get update && apt-get install -yqq --no-install-recommends ca-certificates
             ;;
-        centos)
+        centos|almalinux|rocky)
             yum -y update && yum -y install ca-certificates
             ;;
         fedora)
@@ -587,7 +613,7 @@ ssl_cert_issue() {
     case "${release}" in
         ubuntu|debian|armbian)
             apt update && apt install socat -y ;;
-        centos)
+        centos|almalinux|rocky)
             yum -y update && yum -y install socat ;;
         fedora)
             dnf -y update && dnf -y install socat ;;
@@ -774,6 +800,33 @@ warp_cloudflare() {
     esac
 }
 
+multi_protocol() {
+    echo "Este script solo soporta Vless y Vmess. Si utilizas otros protocolos, ¡NO INSTALES o realiza una copia de seguridad primero! "
+    echo -e "${green}\t1.${plain} Instalar Script de Protocolos Múltiples"
+    echo -e "${green}\t2.${plain} Desinstalar"
+    echo -e "${green}\t3.${plain} Iniciar Servicio"
+    echo -e "${green}\t4.${plain} Detener Servicio"
+    echo -e "${green}\t0.${plain} Volver al Menú Principal"
+    read -p "Elige una opción: " choice
+    case "$choice" in
+        0)
+            show_menu ;;
+        1) 
+            bash <(curl -Ls https://raw.githubusercontent.com/M4mmad/3xui-multi-protocol/master/install.sh --ipv4)
+            ;;
+        2) 
+            bash <(curl -Ls https://raw.githubusercontent.com/M4mmad/3xui-multi-protocol/master/unistall.sh --ipv4)
+            ;;
+        3)
+            systemctl start 3xui-multi-protocol
+            ;;
+        4)
+            systemctl stop 3xui-multi-protocol
+            ;;
+        *) echo "Invalid choice" ;;
+    esac
+}
+
 run_speedtest() {
     # Check if Speedtest is already installed
     if ! command -v speedtest &> /dev/null; then
@@ -930,7 +983,7 @@ install_iplimit() {
         case "${release}" in
             ubuntu|debian)
                 apt update && apt install fail2ban -y ;;
-            centos)
+            centos|almalinux|rocky)
                 yum -y update && yum -y install fail2ban ;;
             fedora)
                 dnf -y update && dnf -y install fail2ban ;;
@@ -993,7 +1046,7 @@ remove_iplimit(){
             case "${release}" in
                 ubuntu|debian)
                     apt-get purge fail2ban -y;;
-                centos)
+                centos|almalinux|rocky)
                     yum remove fail2ban -y;;
                 fedora)
                     dnf remove fail2ban -y;;
@@ -1037,34 +1090,36 @@ show_menu() {
 ————————————————
   ${green}1.${plain} Instalar x-ui
   ${green}2.${plain} Actualizar x-ui
-  ${green}3.${plain} Desinstalar x-ui
+  ${green}3.${plain} Versión Personalizada
+  ${green}4.${plain} Desinstalar x-ui
 ————————————————
-  ${green}4.${plain} Restablecer nombre de usuario, contraseña y Token secreto
-  ${green}5.${plain} Restablecer la configuración del Panel
-  ${green}6.${plain} Cambiar puerto del Panel
-  ${green}7.${plain} Ver la configuración actual del Panel
+  ${green}5.${plain} Restablecer nombre de usuario, contraseña y Token secreto
+  ${green}6.${plain} Restablecer la configuración del Panel
+  ${green}7.${plain} Cambiar puerto del Panel
+  ${green}8.${plain} Ver la configuración actual del Panel
 ————————————————
-  ${green}8.${plain} Iniciar x-ui
-  ${green}9.${plain} Detener  x-ui
-  ${green}10.${plain} Reiniciar x-ui
-  ${green}11.${plain} Mostrar estado de x-ui
-  ${green}12.${plain} Verificar los registros de x-ui
+  ${green}9.${plain} Iniciar x-ui
+  ${green}10.${plain} Detener  x-ui
+  ${green}11.${plain} Reiniciar x-ui
+  ${green}12.${plain} Mostrar estado de x-ui
+  ${green}13.${plain} Verificar los registros de x-ui
 ————————————————
-  ${green}13.${plain} Habilitar x-ui al iniciar el sistema
-  ${green}14.${plain} Deshabilita x-ui al iniciar el sistema
+  ${green}14.${plain} Habilitar x-ui al iniciar el sistema
+  ${green}15.${plain} Deshabilita x-ui al iniciar el sistema
 ————————————————
-  ${green}15.${plain} Gestionar certificados SSL
-  ${green}16.${plain} Gestionar certificados Cloudflare SSL
-  ${green}17.${plain} Gestionar IP Limit
-  ${green}18.${plain} Gestionar WARP
+  ${green}16.${plain} Gestionar certificados SSL
+  ${green}17.${plain} Gestionar certificados Cloudflare SSL
+  ${green}18.${plain} Gestionar IP Limit
+  ${green}19.${plain} Gestionar WARP
+  ${green}20.${plain} Gestión de Protocolos Múltiples
 ————————————————
-  ${green}19.${plain} Habilitar BBR 
-  ${green}20.${plain} Actualizar Geo Files
-  ${green}21.${plain} Activar Firewall y abrir puertos
-  ${green}22.${plain} Speedtest by Ookla
+  ${green}21.${plain} Habilitar BBR 
+  ${green}22.${plain} Actualizar Geo Files
+  ${green}23.${plain} Activar Firewall y abrir puertos
+  ${green}24.${plain} Speedtest by Ookla
 "
     show_status
-    echo && read -p "Por favor ingrese una opción [0-22]: " num
+    echo && read -p "Por favor ingrese una opción [0-24]: " num
 
     case "${num}" in
     0)
@@ -1077,67 +1132,73 @@ show_menu() {
         check_install && update
         ;;
     3)
-        check_install && uninstall
+        check_install && custom_version
         ;;
     4)
-        check_install && reset_user
+        check_install && uninstall
         ;;
     5)
-        check_install && reset_config
+        check_install && reset_user
         ;;
     6)
-        check_install && set_port
+        check_install && reset_config
         ;;
     7)
-        check_install && check_config
+        check_install && set_port
         ;;
     8)
-        check_install && start
+        check_install && check_config
         ;;
     9)
-        check_install && stop
+        check_install && start
         ;;
     10)
-        check_install && restart
+        check_install && stop
         ;;
     11)
-        check_install && status
+        check_install && restart
         ;;
     12)
-        check_install && show_log
+        check_install && status
         ;;
     13)
-        check_install && enable
+        check_install && show_log
         ;;
     14)
-        check_install && disable
+        check_install && enable
         ;;
     15)
-        ssl_cert_issue_main
+        check_install && disable
         ;;
     16)
-        ssl_cert_issue_CF
+        ssl_cert_issue_main
         ;;
     17)
-        iplimit_main
+        ssl_cert_issue_CF
         ;;
     18)
-        warp_cloudflare
+        iplimit_main
         ;;
     19)
-        enable_bbr
+        warp_cloudflare
         ;;
     20)
-        update_geo
+        multi_protocol
         ;;
     21)
-        open_ports
+        enable_bbr
         ;;
     22)
+        update_geo
+        ;;
+    23)
+        open_ports
+        ;;
+    24)
         run_speedtest
         ;;    
     *)
-        LOGE "Por favor ingrese el número correcto [0-22]"
+        LOGE "Por favor ingrese el número correcto [0-24]"
         ;;
     esac
 }
