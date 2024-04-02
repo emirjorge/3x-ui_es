@@ -38,7 +38,13 @@ echo "La versión del sistema operativo es: $release"
 os_version=""
 os_version=$(grep -i version_id /etc/os-release | cut -d \" -f2 | cut -d . -f1)
 
-if [[ "${release}" == "centos" ]]; then
+if [[ "${release}" == "arch" ]]; then
+    echo "El sistema operativo es Arch Linux"
+elif [[ "${release}" == "manjaro" ]]; then
+    echo "El sistema operativo es Manjaro"
+elif [[ "${release}" == "armbian" ]]; then
+    echo "El sistema operativo es Armbian"
+elif [[ "${release}" == "centos" ]]; then
     if [[ ${os_version} -lt 8 ]]; then
         echo -e "${red} Por favor utilice CentOS 8 o una versión superior ${plain}\n" && exit 1
     fi
@@ -56,18 +62,31 @@ elif [[ "${release}" == "debian" ]]; then
     fi
 elif [[ "${release}" == "almalinux" ]]; then
     if [[ ${os_version} -lt 9 ]]; then
-        echo -e "${red} Por favor utilice Almalinux 9 o una versión superior ${plain}\n" && exit 1
+        echo -e "${red} Por favor utilice Alma Linux 9 o una versión superior ${plain}\n" && exit 1
     fi
 elif [[ "${release}" == "rocky" ]]; then
     if [[ ${os_version} -lt 9 ]]; then
-        echo -e "${red} Por favor utilice Rockylinux 9 o una versión superior ${plain}\n" && exit 1
+        echo -e "${red} Por favor utilice Rocky Linux 9 o una versión superior ${plain}\n" && exit 1
     fi
-elif [[ "${release}" == "arch" ]]; then
-    echo "El sistema operativo es ArchLinux"
-    elif [[ "${release}" == "manjaro" ]]; then
-    echo "El sistema operativo es Manjaro"
-elif [[ "${release}" == "armbian" ]]; then
-    echo "El sistema operativo es Armbian"
+elif [[ "${release}" == "oracle" ]]; then
+    if [[ ${os_version} -lt 8 ]]; then
+        echo -e "${red} Por favor utilice Oracle Linux 8 o una versión superior ${plain}\n" && exit 1
+    fi
+else
+    echo -e "${red}Su sistema operativo no es compatible con este script.${plain}\n"
+    echo "Por favor, asegúrese de estar utilizando uno de los siguientes sistemas operativos compatibles:"
+    echo "- Ubuntu 20.04+"
+    echo "- Debian 11+"
+    echo "- CentOS 8+"
+    echo "- Fedora 36+"
+    echo "- Arch Linux"
+    echo "- Manjaro"
+    echo "- Armbian"
+    echo "- AlmaLinux 9+"
+    echo "- Rocky Linux 9+"
+    echo "- Oracle Linux 8+"
+    exit 1
+
 fi
 
 # Declare Variables
@@ -394,19 +413,22 @@ enable_bbr() {
 
     # Verifica el Sistema Operativo e instala paquetes necesarios
     case "${release}" in
-        ubuntu|debian)
-            apt-get update && apt-get install -yqq --no-install-recommends ca-certificates
-            ;;
-        centos|almalinux|rocky)
-            yum -y update && yum -y install ca-certificates
-            ;;
-        fedora)
-            dnf -y update && dnf -y install ca-certificates
-            ;;
-        *)
-            echo -e "${red}Sistema Operativo no compatible. Verifique el script e instale los paquetes necesarios manualmente.${plain}\n"
-            exit 1
-            ;;
+    ubuntu | debian | armbian)
+        apt-get update && apt-get install -yqq --no-install-recommends ca-certificates
+        ;;
+    centos | almalinux | rocky | oracle)
+        yum -y update && yum -y install ca-certificates
+        ;;
+    fedora)
+        dnf -y update && dnf -y install ca-certificates
+        ;;
+    arch | manjaro)
+        pacman -Sy --noconfirm ca-certificates
+        ;;
+    *)
+        echo -e "${red}Sistema Operativo no compatible. Verifique el script e instale los paquetes necesarios manualmente.${plain}\n"
+        exit 1
+        ;;
     esac
 
     # Habilitar BBR
@@ -718,19 +740,22 @@ ssl_cert_issue() {
     fi
     # install socat second
     case "${release}" in
-        ubuntu|debian|armbian)
-            apt update && apt install socat -y 
-            ;;
-        centos|almalinux|rocky)
-            yum -y update && yum -y install socat 
-            ;;
-        fedora)
-            dnf -y update && dnf -y install socat 
-            ;;
-        *)
-            echo -e "${red}Sistema operativo no compatible. Verifique el script e instale los paquetes necesarios manualmente.${plain}\n"
-            exit 1 
-            ;;
+    ubuntu | debian | armbian)
+        apt update && apt install socat -y 
+        ;;
+    centos | almalinux | rocky | oracle)
+        yum -y update && yum -y install socat 
+        ;;
+    fedora)
+        dnf -y update && dnf -y install socat 
+        ;;
+    arch | manjaro)
+        pacman -Sy --noconfirm socat
+        ;;
+    *)
+        echo -e "${red}Sistema operativo no compatible. Verifique el script e instale los paquetes necesarios manualmente.${plain}\n"
+        exit 1 
+        ;;
     esac
     if [ $? -ne 0 ]; then
         LOGE "La instalación de socat falló, verifique los registros"
@@ -914,7 +939,7 @@ warp_cloudflare() {
 
 run_speedtest() {
     # Check if Speedtest is already installed
-    if ! command -v speedtest &> /dev/null; then
+    if ! command -v speedtest &>/dev/null; then
         # If not installed, install it
         local pkg_manager=""
         local speedtest_install_script=""
@@ -1079,22 +1104,26 @@ iplimit_main() {
 install_iplimit() {
     if ! command -v fail2ban-client &>/dev/null; then
         echo -e "${green}Fail2ban no está instalado. Instalando ahora...!${plain}\n"
+
         # Check the OS and install necessary packages
         case "${release}" in
-            ubuntu|debian)
-                apt update && apt install fail2ban -y 
-                ;;
-            centos|almalinux|rocky)
-                yum update -y && yum install epel-release -y
-                yum -y install fail2ban 
-                ;;
-            fedora)
-                dnf -y update && dnf -y install fail2ban 
-                ;;
-            *)
-                echo -e "${red}Sistema operativo no compatible. Verifique el script e instale los paquetes necesarios manualmente.${plain}\n"
-                exit 1 
-                ;;
+        ubuntu | debian | armbian)
+            apt update && apt install fail2ban -y 
+            ;;
+        centos | almalinux | rocky | oracle)
+            yum update -y && yum install epel-release -y
+            yum -y install fail2ban 
+            ;;
+        fedora)
+            dnf -y update && dnf -y install fail2ban
+            ;;
+        arch | manjaro)
+        pacman -Syu --noconfirm fail2ban 
+        ;;
+        *)
+            echo -e "${red}Sistema operativo no compatible. Verifique el script e instale los paquetes necesarios manualmente.${plain}\n"
+            exit 1 
+            ;;
         esac
 
                 if ! command -v fail2ban-client &>/dev/null; then
@@ -1145,32 +1174,35 @@ remove_iplimit() {
     echo -e "${green}\t0.${plain} Abortar"
     read -p "Elige una opción: " num
     case "$num" in
-        1) 
-            rm -f /etc/fail2ban/filter.d/3x-ipl.conf
-            rm -f /etc/fail2ban/action.d/3x-ipl.conf
-            rm -f /etc/fail2ban/jail.d/3x-ipl.conf
-            systemctl restart fail2ban
-            echo -e "${green}IP Limit removido exitosamente!${plain}\n"
-            before_show_menu 
+    1) 
+        rm -f /etc/fail2ban/filter.d/3x-ipl.conf
+        rm -f /etc/fail2ban/action.d/3x-ipl.conf
+        rm -f /etc/fail2ban/jail.d/3x-ipl.conf
+        systemctl restart fail2ban
+        echo -e "${green}IP Limit removido exitosamente!${plain}\n"
+        before_show_menu 
+        ;;
+    2)  
+        rm -rf /etc/fail2ban
+        systemctl stop fail2ban
+        case "${release}" in
+        ubuntu | debian | armbian)
+            apt-get remove -y fail2ban
+            apt-get purge -y fail2ban -y
+            apt-get autoremove -y
             ;;
-        2)  
-            rm -rf /etc/fail2ban
-            systemctl stop fail2ban
-            case "${release}" in
-                ubuntu|debian)
-                    apt-get remove -y fail2ban
-                    apt-get purge -y fail2ban -y
-                    apt-get autoremove -y
-                    ;;
-                centos|almalinux|rocky)
-                    yum remove fail2ban -y
-                    yum autoremove -y
-                    ;;
-                fedora)
-                    dnf remove fail2ban -y
-                    dnf autoremove -y
-                    ;;
-                *)
+        centos | almalinux | rocky | oracle)
+            yum remove fail2ban -y
+            yum autoremove -y
+            ;;
+        fedora)
+            dnf remove fail2ban -y
+            dnf autoremove -y
+            ;;
+        arch | manjaro)
+            pacman -Rns --noconfirm fail2ban
+            ;;
+        *)
                     echo -e "${red}Sistema operativo no compatible. Desinstale Fail2ban manualmente.${plain}\n"
                     exit 1 
                     ;;

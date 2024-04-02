@@ -23,7 +23,7 @@ else
 fi
 echo "La versión del sistema operativo es: $release"
 
-arch3xui() {
+arch() {
     case "$(uname -m)" in
     x86_64 | x64 | amd64) echo 'amd64' ;;
     i*86 | x86) echo '386' ;;
@@ -31,16 +31,23 @@ arch3xui() {
     armv7* | armv7 | arm) echo 'armv7' ;;
     armv6* | armv6) echo 'armv6' ;;
     armv5* | armv5) echo 'armv5' ;;
+    s390x) echo 's390x' ;;
     *) echo -e "${green}¡Arquitectura de CPU no compatible! ${plain}" && rm -f install.sh && exit 1 ;;
     esac
 }
 
-echo "arch: $(arch3xui)"
+echo "arch: $(arch)"
 
 os_version=""
 os_version=$(grep -i version_id /etc/os-release | cut -d \" -f2 | cut -d . -f1)
 
-if [[ "${release}" == "centos" ]]; then
+if [[ "${release}" == "arch" ]]; then
+    echo "Tu sistema operativo es Arch Linux"
+    elif [[ "${release}" == "manjaro" ]]; then
+    echo "Tu sistema operativo es Manjaro"
+elif [[ "${release}" == "armbian" ]]; then
+    echo "Tu sistema operativo es Armbian"
+elif [[ "${release}" == "centos" ]]; then
     if [[ ${os_version} -lt 8 ]]; then
         echo -e "${red} Por favor utilice CentOS 8 o superior ${plain}\n" && exit 1
     fi
@@ -48,40 +55,46 @@ elif [[ "${release}" == "ubuntu" ]]; then
     if [[ ${os_version} -lt 20 ]]; then
         echo -e "${red}Por favor utilice Ubuntu 20 o una versión superior!${plain}\n" && exit 1
     fi
-
 elif [[ "${release}" == "fedora" ]]; then
     if [[ ${os_version} -lt 36 ]]; then
         echo -e "${red}Por favor utilice Fedora 36 o una versión superior!${plain}\n" && exit 1
     fi
-
 elif [[ "${release}" == "debian" ]]; then
     if [[ ${os_version} -lt 11 ]]; then
         echo -e "${red} Por favor utilice Debian 11 o superior ${plain}\n" && exit 1
     fi
-
 elif [[ "${release}" == "almalinux" ]]; then
     if [[ ${os_version} -lt 9 ]]; then
-        echo -e "${red} Por favor utilice AlmaLinux 9 o superior ${plain}\n" && exit 1
+        echo -e "${red} Por favor utilice Alma Linux 9 o superior ${plain}\n" && exit 1
     fi
-
 elif [[ "${release}" == "rocky" ]]; then
     if [[ ${os_version} -lt 9 ]]; then
-        echo -e "${red} Por favor utilice RockyLinux 9 o superior ${plain}\n" && exit 1
+        echo -e "${red} Por favor utilice Rocky Linux 9 o superior ${plain}\n" && exit 1
     fi
-elif [[ "${release}" == "arch" ]]; then
-    echo "Tu sistema operativo es ArchLinux"
-    elif [[ "${release}" == "manjaro" ]]; then
-    echo "Tu sistema operativo es Manjaro"
-elif [[ "${release}" == "armbian" ]]; then
-    echo "Tu sistema operativo es Armbian"
-
+elif [[ "${release}" == "oracle" ]]; then
+    if [[ ${os_version} -lt 8 ]]; then
+        echo -e "${red} Por favor utilice Oracle Linux 8 o superior ${plain}\n" && exit 1
+    fi
 else
-    echo -e "${red}No se pudo verificar la versión del sistema operativo, ¡comuníquese con el autor!${plain}" && exit 1
+    echo -e "${red}Su sistema operativo no es compatible con este script.${plain}\n"
+    echo "Por favor, asegúrese de estar utilizando uno de los siguientes sistemas operativos compatibles:"
+    echo "- Ubuntu 20.04+"
+    echo "- Debian 11+"
+    echo "- CentOS 8+"
+    echo "- Fedora 36+"
+    echo "- Arch Linux"
+    echo "- Manjaro"
+    echo "- Armbian"
+    echo "- AlmaLinux 9+"
+    echo "- Rocky Linux 9+"
+    echo "- Oracle Linux 8+"
+    exit 1
+
 fi
 
 install_base() {
     case "${release}" in
-    centos | almalinux | rocky)
+    centos | almalinux | rocky | oracle)
         yum -y update && yum install -y -q wget curl tar tzdata
         ;;
     fedora)
@@ -123,9 +136,9 @@ config_after_install() {
             echo -e "${green} nombre de usuario: ${usernameTemp}${plain}"
             echo -e "${green} contraseña: ${passwordTemp}${plain}"
             echo -e "###############################################"
-            echo -e "${red} Si olvidó su información de inicio de sesión, puede usar el comando x-ui y luego elegir opción 7 para revisarlo después de la instalación${plain}"
+            echo -e "${red} Si olvidó su información de inicio de sesión, puede usar el comando x-ui y luego elegir opción 8 para revisarlo después de la instalación${plain}"
         else
-            echo -e "${red} Esta es su actualización, se mantendrá la configuración anterior, si olvidó su información de inicio de sesión, puede usar el comando x-ui y luego elegir opción 7 para revisarlo${plain}"
+            echo -e "${red} Esta es su actualización, se mantendrá la configuración anterior, si olvidó su información de inicio de sesión, puede usar el comando x-ui y luego elegir opción 8 para revisarlo${plain}"
         fi
     fi
     /usr/local/x-ui/x-ui migrate
@@ -141,16 +154,16 @@ install_x-ui() {
             exit 1
         fi
         echo -e "Se encontró la última versión de x-ui: ${last_version}, comenzando la instalación..."
-        wget -N --no-check-certificate -O /usr/local/x-ui-linux-$(arch3xui).tar.gz https://github.com/emirjorge/3x-ui_es/releases/download/${last_version}/x-ui-linux-$(arch3xui).tar.gz
+        wget -N --no-check-certificate -O /usr/local/x-ui-linux-$(arch).tar.gz https://github.com/emirjorge/3x-ui_es/releases/download/${last_version}/x-ui-linux-$(arch).tar.gz
         if [[ $? -ne 0 ]]; then
             echo -e "${red}Error al descargar x-ui, asegúrese de que su servidor pueda acceder a Github ${plain}"
             exit 1
         fi
     else
         last_version=$1
-        url="https://github.com/emirjorge/3x-ui_es/releases/download/${last_version}/x-ui-linux-$(arch3xui).tar.gz"
+        url="https://github.com/emirjorge/3x-ui_es/releases/download/${last_version}/x-ui-linux-$(arch).tar.gz"
         echo -e "Comenzando a instalar x-ui $1"
-        wget -N --no-check-certificate -O /usr/local/x-ui-linux-$(arch3xui).tar.gz ${url}
+        wget -N --no-check-certificate -O /usr/local/x-ui-linux-$(arch).tar.gz ${url}
         if [[ $? -ne 0 ]]; then
             echo -e "${red}Error al descargar x-ui $1, por favor verifique que exista la versión ${plain}"
             exit 1
@@ -162,18 +175,18 @@ install_x-ui() {
         rm /usr/local/x-ui/ -rf
     fi
 
-    tar zxvf x-ui-linux-$(arch3xui).tar.gz
-    rm x-ui-linux-$(arch3xui).tar.gz -f
+    tar zxvf x-ui-linux-$(arch).tar.gz
+    rm x-ui-linux-$(arch).tar.gz -f
     cd x-ui
     chmod +x x-ui
 
     # Verifica la arquitectura del sistema y renombra el archivo en consecuencia
-    if [[ $(arch3xui) == "armv5" || $(arch3xui) == "armv6" || $(arch3xui) == "armv7" ]]; then
-    mv bin/xray-linux-$(arch3xui) bin/xray-linux-arm
+    if [[ $(arch) == "armv5" || $(arch) == "armv6" || $(arch) == "armv7" ]]; then
+    mv bin/xray-linux-$(arch) bin/xray-linux-arm
     chmod +x bin/xray-linux-arm
     fi
     
-    chmod +x x-ui bin/xray-linux-$(arch3xui)
+    chmod +x x-ui bin/xray-linux-$(arch)
     cp -f x-ui.service /etc/systemd/system/
     wget --no-check-certificate -O /usr/bin/x-ui https://raw.githubusercontent.com/emirjorge/3x-ui_es/main/x-ui.sh
     chmod +x /usr/local/x-ui/x-ui.sh
