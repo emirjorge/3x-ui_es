@@ -5,3 +5,4 @@ Versión de 3x-ui en español.
 ```
 bash <(curl -Ls https://raw.githubusercontent.com/emirjorge/3x-ui_es/master/install.sh)
 ```
+
