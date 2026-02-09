@@ -12,11 +12,11 @@ function LOGD() {
 }
 
 function LOGE() {
-    echo -e "${red}[ERR] $* ${plain}"
+    echo -e "${red}[ERROR] $* ${plain}"
 }
 
 function LOGI() {
-    echo -e "${green}[INF] $* ${plain}"
+    echo -e "${green}[INFO] $* ${plain}"
 }
 
 # Ayudantes de puertos: detecta si hay un servicio escuchando (mejor esfuerzo)
@@ -78,18 +78,24 @@ iplimit_log_path="${log_folder}/3xipl.log"
 iplimit_banned_log_path="${log_folder}/3xipl-banned.log"
 
 confirm() {
+    # 1️⃣ Revisar si se pasaron más de un argumento a la función
     if [[ $# > 1 ]]; then
-        echo && read -rp "$1 [Default $2]: " temp
+        # Muestra un mensaje con un valor por defecto y lee la respuesta del usuario
+        echo && read -rp "$1 [Predeterminado $2]: " temp
+        # Si el usuario no escribe nada, usar el valor por defecto
         if [[ "${temp}" == "" ]]; then
             temp=$2
         fi
     else
-        read -rp "$1 [y/n]: " temp
+        # Si solo se pasa un argumento, solo muestra [s/n] y lee la respuesta
+        read -rp "$1 [s/n]: " temp
     fi
-    if [[ "${temp}" == "y" || "${temp}" == "Y" ]]; then
-        return 0
+
+    # 2️⃣ Verificar la respuesta del usuario
+    if [[ "${temp}" == "s" || "${temp}" == "S" || "${temp}" == "y" || "${temp}" == "Y" ]]; then
+        return 0   # significa "sí" → éxito
     else
-        return 1
+        return 1   # significa "no" → cancelación
     fi
 }
 
@@ -103,7 +109,7 @@ confirm_restart() {
 }
 
 before_show_menu() {
-    echo && echo -n -e "${yellow}Presione enter para volver al menú principal: ${plain}" && read -r temp
+    echo && echo -n -e "${yellow}Presione enter para volver al menú principal... ${plain}" && read -r temp
     show_menu
 }
 
@@ -119,7 +125,7 @@ install() {
 }
 
 update() {
-    confirm "Esta función reinstalará forzosamente la última versión y los datos no se perderán. ¿Quieres continuar? (y/n)" "y"
+    confirm "Esta función reinstalará forzosamente la última versión y los datos no se perderán. ¿Quieres continuar? (s/n)" "s"
     if [[ $? != 0 ]]; then
         LOGE "Cancelado"
         if [[ $# == 0 ]]; then
@@ -136,7 +142,7 @@ update() {
 
 update_menu() {
     echo -e "${yellow}Actualizando menú${plain}"
-    confirm "Esta función actualizará el menú con los últimos cambios." "y"
+    confirm "Esta función actualizará el menú con los últimos cambios." "s"
     if [[ $? != 0 ]]; then
         LOGE "Cancelado"
         if [[ $# == 0 ]]; then
@@ -158,7 +164,7 @@ update_menu() {
     fi
 }
 
-custom_version() {
+legacy_version() {
     echo -n "Ingrese la versión del Panel (Ejemplo 2.4.0):"
     read -r panel_version
 
@@ -214,7 +220,7 @@ uninstall() {
 }
 
 reset_user() {
-    confirm "¿Estás seguro de restablecer el nombre de usuario y contraseña del panel? (y/n)" "n"
+    confirm "¿Estás seguro de restablecer el nombre de usuario y contraseña del panel? (s/n)" "n"
     if [[ $? != 0 ]]; then
         if [[ $# == 0 ]]; then
             show_menu
@@ -227,7 +233,7 @@ reset_user() {
     read -rp "Establezca la contraseña de inicio de sesión [la contraseña predeterminada es aleatoria]: " config_password
     [[ -z $config_password ]] && config_password=$(gen_random_string 18)
 
-    read -rp "¿Desea desactivar la autenticación de dos factores configurada actualmente? (S/N): " twoFactorConfirm
+    read -rp "¿Desea desactivar la autenticación de dos factores configurada actualmente? (s/n): " twoFactorConfirm
     if [[ $twoFactorConfirm != "s" && $twoFactorConfirm != "S" ]]; then    
         ${xui_folder}/x-ui setting -username "${config_account}" -password "${config_password}" -resetTwoFactor false >/dev/null 2>&1
     else
@@ -250,7 +256,7 @@ gen_random_string() {
 reset_webbasepath() {
     echo -e "${yellow}Restableciendo la Base Path de la Web${plain}"
 
-    read -rp "¿Está seguro de que desea restablecer el Path Base de la web? (S/N): " confirm
+    read -rp "¿Está seguro de que desea restablecer el Path Base de la web? (s/n): " confirm
     if [[ $confirm != "s" && $confirm != "S" ]]; then
         echo -e "${yellow}Operation canceled.${plain}"
         return
@@ -307,9 +313,9 @@ check_config() {
     else
         echo -e "${red}⚠ ADVERTENCIA: ¡No hay ningún certificado SSL configurado!${plain}"
         echo -e "${yellow}Puede obtener un certificado de Let’s Encrypt para su dirección IP (válido ~6 días, se renueva automáticamente).${plain}"
-        read -rp "¿Generar ahora el certificado SSL para la IP? [S/N]: " gen_ssl
+        read -rp "¿Generar ahora el certificado SSL para la IP? [s/n]: " gen_ssl
         if [[ "$gen_ssl" == "s" || "$gen_ssl" == "S" ]]; then
-            stop >/dev/null 2>&1
+            stop_auto >/dev/null 2>&1
             ssl_cert_issue_for_ip
             if [[ $? -eq 0 ]]; then
                 echo -e "${green}URL de acceso: https://${server_ip}:${existing_port}${existing_webBasePath}${plain}"
@@ -322,7 +328,7 @@ check_config() {
             fi
         else
             echo -e "${yellow}URL de acceso: http://${server_ip}:${existing_port}${existing_webBasePath}${plain}"
-            echo -e "${yellow}For security, please configure SSL certificate using option 18 (SSL Certificate Management)${plain}"
+            echo -e "${yellow}Por seguridad, configure el certificado SSL usando la opción 18 (Gestión de certificados SSL)${plain}"
         fi
     fi
 }
@@ -363,6 +369,29 @@ start() {
     if [[ $# == 0 ]]; then
         before_show_menu
     fi
+}
+
+stop_auto() {
+    check_status
+    if [[ $? == 1 ]]; then
+        echo ""
+        LOGI "El panel se detuvo. ¡No es necesario detenerlo nuevamente!"
+    else
+        if [[ $release == "alpine" ]]; then
+            rc-service x-ui stop
+        else
+            systemctl stop x-ui
+        fi
+        sleep 2
+        check_status
+        if [[ $? == 1 ]]; then
+            LOGI "x-ui y xray se detuvieron exitosamente"
+        else
+            LOGE "El panel no pudo detenerse, es probable que tarde más de dos segundos en detenerse. Verifique la información del registro luego"
+        fi
+    fi
+
+    sleep 2
 }
 
 stop() {
@@ -1423,7 +1452,7 @@ ssl_cert_issue() {
         rm -rf ~/.acme.sh/${domain}  # Limpiar datos temporales de acme.sh para este dominio
         exit 1
     else
-        LOGE "Certificados emitidos exitosamente, instalando certificados..."
+        LOGI "Certificados emitidos exitosamente, instalando certificados..."
     fi
 
     # Comando de recarga por defecto
@@ -2216,7 +2245,7 @@ show_menu() {
 │   ${green}1.${plain} Instalar                                  │
 │   ${green}2.${plain} Actualizar                                │
 │   ${green}3.${plain} Actualizar Menú                           │
-│   ${green}4.${plain} Versión Heredada                          │
+│   ${green}4.${plain} Versión Personalizada                     │
 │   ${green}5.${plain} Desinstalar                               │
 │────────────────────────────────────────────────│
 │   ${green}6.${plain} Restablecer Usuario y Contraseña          │
